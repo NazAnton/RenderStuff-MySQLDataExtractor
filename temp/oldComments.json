@@ -1,3 +1,34 @@
 {
-	"oldComments": []
+	"oldComments": [
+		{
+			"id": "000243",
+			"belonging": "00003",
+			"timestamp": "2010-07-13T06:48:16.000Z",
+			"author": "orikgold",
+			"secret": "orikgold@mail.ru",
+			"ip": "217.25.31.139",
+			"origin_lang": "ru",
+			"autotext_en": "I thank you all went well !!!",
+			"autotext_ru": "спасибо у меня всё вышло хорошо!!!",
+			"goodtext_en": "",
+			"goodtext_ru": "",
+			"show_in_fresh": 1,
+			"sanitizedHtml": "I thank you all went well !!!"
+		},
+		{
+			"id": "002579",
+			"belonging": "00003",
+			"timestamp": "2012-01-04T03:27:13.000Z",
+			"author": "Rain",
+			"secret": "",
+			"ip": "94.178.146.136",
+			"origin_lang": "ru",
+			"autotext_en": "Spasibki! *PARDON*",
+			"autotext_ru": "Спасибки!  *PARDON*",
+			"goodtext_en": "",
+			"goodtext_ru": "",
+			"show_in_fresh": 1,
+			"sanitizedHtml": "Spasibki! *PARDON*"
+		}
+	]
 }

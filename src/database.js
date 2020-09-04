@@ -23,6 +23,21 @@ async function connect() {
   });
 }
 
+async function query(queryString) {
+  return new Promise((res, rej) => {
+    // (error, results, fields)
+    DB.query(queryString, (err, results) => {
+      if (err) {
+        console.log('DB query error:', err);
+        rej(err);
+      } else {
+        console.log('DB query results:', results);
+        res(results);
+      }
+    });
+  });
+}
+
 function close() {
   DB.end((err) => {
     if (err) console.log(err);
@@ -30,4 +45,4 @@ function close() {
   });
 }
 
-export { connect, close };
+export { connect, query, close };
