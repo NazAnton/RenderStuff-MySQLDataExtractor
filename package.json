@@ -1,0 +1,36 @@
+{
+  "name": "my-sql-data-extractor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "nodemon": "nodemon --inspect -r esm --watch src --watch server.js server.js",
+    "livereload": "livereload . -w 1000 -d",
+    "bundle_watch_dev": "webpack --watch --info-verbosity verbose"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "esm": "^3.2.25",
+    "express": "^4.17.1",
+    "livereload": "^0.9.1",
+    "mysql": "^2.18.1",
+    "prettier": "^2.1.1",
+    "sanitize-html": "^1.27.3",
+    "serialize-javascript": "^4.0.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-node-externals": "^2.5.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.2.0",
+    "eslint-config-airbnb": "^18.2.0",
+    "eslint-plugin-import": "^2.21.2",
+    "eslint-plugin-jsx-a11y": "^6.3.0",
+    "eslint-plugin-react": "^7.20.0",
+    "eslint-plugin-react-hooks": "^4.0.0",
+    "nodemon": "^2.0.4"
+  }
+}

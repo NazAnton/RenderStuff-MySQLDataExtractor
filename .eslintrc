@@ -1,0 +1,32 @@
+// all this rules will be inherited in all underlying folders, the inherit and override
+// rules works as expected (as inheritance and overrides in css)
+{
+  // "airbnb-base" - base without React plugins
+  "extends": [
+      "airbnb",
+      "airbnb/hooks",
+      "prettier",
+      "prettier/react"
+  ],
+  "plugins": [
+      "prettier",
+      "react-hooks"
+  ],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "rules": {
+      "linebreak-style": 0, // windows style of line-break
+      "import/extensions": ["error", "ignorePackages"],
+      "react/prop-types": "off",
+      "prettier/prettier": "error",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn", // <--- THIS IS THE NEW RULE
+      "no-console": "off"
+  },
+  "globals": {
+      "window": true,
+      "document": true
+  }
+}
