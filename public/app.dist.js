@@ -108,7 +108,11 @@ function initFetchData() {
   buttonEl = document.getElementById('extractOldCommentsByID-button');
   const fetchOldCommentsByIDButton = () => Object(_fetchData_js__WEBPACK_IMPORTED_MODULE_0__["default"])('fetchOldCommentsByID');
   buttonEl.addEventListener('click', fetchOldCommentsByIDButton);
-  console.log('initFetchData');
+
+  // handle3dModelsExtract
+  buttonEl = document.getElementById('extract3dModels-button');
+  const fetch3dModelsButton = () => Object(_fetchData_js__WEBPACK_IMPORTED_MODULE_0__["default"])('extract3dModels');
+  buttonEl.addEventListener('click', fetch3dModelsButton);
 }
 
 initFetchData();
@@ -147,12 +151,35 @@ async function fetchOldCommentsByID() {
   return data;
 }
 
+async function fetch3dModels() {
+  let data = null;
+  const inputEL = document.getElementById('extractOldCommentsByID-input');
+  const ID = inputEL.value;
+
+  console.log(ID);
+
+  const response = await fetch('/api/extract-3d-models');
+  console.log('response:', response);
+
+  try {
+    data = await response.json();
+  } catch (err) {
+    console.log(err);
+  }
+
+  return data;
+}
+
 async function fetchData(key) {
   let data = null;
 
   switch (key) {
     case 'fetchOldCommentsByID':
       data = await fetchOldCommentsByID();
+      break;
+
+    case 'extract3dModels':
+      data = await fetch3dModels();
       break;
 
     default:

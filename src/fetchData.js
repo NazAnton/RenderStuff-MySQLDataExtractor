@@ -20,12 +20,35 @@ async function fetchOldCommentsByID() {
   return data;
 }
 
+async function fetch3dModels() {
+  let data = null;
+  const inputEL = document.getElementById('extractOldCommentsByID-input');
+  const ID = inputEL.value;
+
+  console.log(ID);
+
+  const response = await fetch('/api/extract-3d-models');
+  console.log('response:', response);
+
+  try {
+    data = await response.json();
+  } catch (err) {
+    console.log(err);
+  }
+
+  return data;
+}
+
 async function fetchData(key) {
   let data = null;
 
   switch (key) {
     case 'fetchOldCommentsByID':
       data = await fetchOldCommentsByID();
+      break;
+
+    case 'extract3dModels':
+      data = await fetch3dModels();
       break;
 
     default:

@@ -14,6 +14,8 @@ const htmlTemplate = `
 <body>
   ID: <input id="extractOldCommentsByID-input" type="number"/>
   <button id="extractOldCommentsByID-button">Extract Old Comment By ID</button>
+  <br /><br />
+  <button id="extract3dModels-button">Extract 3D Models</button>
 </body>
 <script src="http://localhost:3000/app.dist.js"></script>
 </html>

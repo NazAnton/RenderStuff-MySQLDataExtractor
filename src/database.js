@@ -31,7 +31,7 @@ async function query(queryString) {
         console.log('DB query error:', err);
         rej(err);
       } else {
-        console.log('DB query results:', results);
+        // console.log('DB query results:', results);
         res(results);
       }
     });
