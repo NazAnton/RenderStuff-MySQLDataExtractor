@@ -17,27 +17,6 @@ const queries = {
   1: `SELECT * FROM \`posts\` WHERE \`group\` = '${dictionary[1]}' OR \`group\` = '${dictionary[2]}'`,
 };
 
-const dataJSONFreeTemplate = {
-  dateCreation: '2020-07-14 10:37:00',
-  dateCreationOverride: '2014-07-03 00:00:00',
-  descriptionSEO: 'NO description yet',
-  thumbnail: {
-    fileName: 'some file in images folder.jpg',
-  },
-  subtype: {
-    downloads: {
-      // 'renderstuff-bedspread-silver-cushions-milky_max.zip'
-      MAX: 'renderstuff-name_max.zip',
-      FBX: 'renderstuff-name_fbx.zip',
-      OBJ: 'renderstuff-name_obj.zip',
-      _3DS: 'renderstuff-name_3ds.zip',
-    },
-  },
-  tags: {
-    common: [{ text: 'Furniture' }],
-  },
-};
-
 async function queryAllModelsDataRaw() {
   let results = [];
   try {
@@ -67,17 +46,6 @@ function removeLastSegment(pathSegments) {
 
   return pathSegmentsDefined.join('/');
 }
-
-// downloads: {
-//   // 'renderstuff-bedspread-silver-cushions-milky_max.zip'
-//   MAX: 'renderstuff-name_max.zip',
-//   FBX: 'renderstuff-name_fbx.zip',
-//   OBJ: 'renderstuff-name_obj.zip',
-//   _3DS: 'renderstuff-name_3ds.zip',
-// },
-
-// 0: "renderstuff-cat-n-dog-cups_max.zip"
-// 1: "renderstuff-cat-n-dog-cups_obj.zip"
 
 function defineDownloads(oldFilesDir) {
   const dirContent = fs.readdirSync(path.resolve(contentFolderLocation, oldFilesDir));
@@ -140,18 +108,34 @@ function defineThumbnail(oldFilesDir, image_path) {
   return path.resolve(contentFolderLocation, image_path);
 }
 
+function makeRelDir(oldModelData) {
+  const { id, title_en } = oldModelData;
+  const titleNo3dModel = title_en.toLowerCase().replace(/\s3d model?s?/g, '');
+
+  return `${Number.parseInt(id, 10)}-${titleNo3dModel.split(' ').join('-')}`;
+}
+
+function fileNameFormRelDir(relativeDirectory) {
+  const fileNameDefined = relativeDirectory.split('-');
+
+  fileNameDefined.shift();
+
+  return `00-${fileNameDefined.join('-')}.jpg`;
+}
+
 function shape3dModelsData(oldModelData) {
   const { timestamp, html_en, image_path } = oldModelData;
   const excerptMDX = parseExcerptMDX(html_en);
   // image_path "content/publication-files/0001/tooltip.jpg"
   const oldFilesDir = removeLastSegment(image_path);
+  const relativeDirectory = makeRelDir(oldModelData);
 
   const dataJSON = {
     dateCreation: timestamp,
     dateCreationOverride: timestamp,
     descriptionSEO: null,
     thumbnail: {
-      fileName: 'some file in images folder.jpg',
+      fileName: fileNameFormRelDir(relativeDirectory),
     },
     subtype: defineSubtype(oldModelData, excerptMDX, oldFilesDir),
     tags: {
@@ -160,7 +144,7 @@ function shape3dModelsData(oldModelData) {
   };
 
   const driveData = {
-    relativeDirectory: '', // title dashed prepended with id (separate foo)
+    relativeDirectory,
     thumbnailFileName: defineThumbnail(oldFilesDir, image_path),
     excerptMDX,
   };
