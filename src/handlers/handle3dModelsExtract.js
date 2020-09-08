@@ -4,9 +4,8 @@ import path from 'path';
 import sanitizeHtml from 'sanitize-html';
 
 import { connect, query, close } from '../database.js';
+import dir, { writeFile, writeJSON, copyFile } from '../dir.js';
 import pathFormat from '../../../1Site/src/utils/pathFormat.js';
-
-const contentFolderLocation = 'c:/OSPanel/domains/rs.local.com/rs17-static/';
 
 const dictionary = {
   1: '3d-models-pro',
@@ -34,9 +33,17 @@ function parsePrice(feature) {
   return Number.parseInt(feature.split(';')[0], 10);
 }
 
-function parseStockPage(excerptMDX) {
-  const regex = /<a href="(https?:\/\/www.turbosquid.com\/.*)">/g;
-  return regex.exec(excerptMDX)[1];
+function parseStockPage(html_en) {
+  const regex = /<a.*href="(https?:\/\/www.turbosquid.com\/.*)">/g;
+  // console.log('match(regex):', image_path.match(regex));
+  const matchGroups = regex.exec(html_en);
+  // regex.lastIndex = 0;
+  if (matchGroups === null) {
+    console.log('===================');
+    console.log(html_en);
+    console.log('===================');
+  }
+  return matchGroups !== null ? matchGroups[1] : null;
 }
 
 function removeLastSegment(pathSegments) {
@@ -47,8 +54,8 @@ function removeLastSegment(pathSegments) {
   return pathSegmentsDefined.join('/');
 }
 
-function defineDownloads(oldFilesDir) {
-  const dirContent = fs.readdirSync(path.resolve(contentFolderLocation, oldFilesDir));
+function defineDownloads(oldPublicationFilesFolder) {
+  const dirContent = fs.readdirSync(path.resolve(dir.oldContent, oldPublicationFilesFolder));
 
   const zipFiles = dirContent.filter((filename) => {
     return path.extname(filename) === '.zip';
@@ -71,18 +78,18 @@ function defineDownloads(oldFilesDir) {
   return downloads;
 }
 
-function defineSubtype(oldModelData, excerptMDX, oldFilesDir) {
+function defineSubtype(oldModelData, html_en, oldPublicationFilesFolder) {
   const { feature, group } = oldModelData;
   let subtype = null;
 
   if (group === dictionary[1])
     subtype = {
       price: parsePrice(feature),
-      stockPage: parseStockPage(excerptMDX) || 'https://address?referral=RenderStuff',
+      stockPage: parseStockPage(html_en) || 'https://address?referral=RenderStuff',
     };
   else
     subtype = {
-      downloads: defineDownloads(oldFilesDir),
+      downloads: defineDownloads(oldPublicationFilesFolder),
     };
 
   return subtype;
@@ -95,17 +102,34 @@ function replaceSlashedQuotes(html_en) {
 }
 
 function parseExcerptMDX(html_en) {
-  return sanitizeHtml(replaceSlashedQuotes(html_en), {
-    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
+  // add "img"
+  let allowedTagsDefined = sanitizeHtml.defaults.allowedTags.concat(['img']);
+  // remove "ul" and "li"
+  allowedTagsDefined = allowedTagsDefined.filter((tag) => tag !== 'ul' && tag !== 'li');
+
+  let sanitizedHtml = sanitizeHtml(html_en, {
+    allowedTags: allowedTagsDefined,
   });
+
+  // pattern to download links
+  const regexDownloadLinks = /<a href="http:\/\/i\.renderstuff\.com\/content\/publication-files\/.*<\/a>/g;
+  // pattern for two <br />
+  const regexTwoBr = /<br \/>[\r\n]+<br \/>/g;
+
+  sanitizedHtml = sanitizedHtml.replace(regexDownloadLinks, '');
+  sanitizedHtml = sanitizedHtml.replace(regexTwoBr, '<br />');
+  // additional pass, to remove double <br /> which still left after first pass over four <br />
+  sanitizedHtml = sanitizedHtml.replace(regexTwoBr, '<br />');
+
+  return sanitizedHtml;
 }
 
-function defineThumbnail(oldFilesDir, image_path) {
-  const bigPath = path.resolve(contentFolderLocation, oldFilesDir, 'big.jpg');
+function defineThumbnail(oldPublicationFilesFolder, image_path) {
+  const bigPath = path.resolve(dir.oldContent, oldPublicationFilesFolder, 'big.jpg');
 
   if (fs.existsSync(bigPath)) return bigPath;
 
-  return path.resolve(contentFolderLocation, image_path);
+  return path.resolve(dir.oldContent, image_path);
 }
 
 function makeRelDir(oldModelData) {
@@ -124,10 +148,11 @@ function fileNameFormRelDir(relativeDirectory) {
 }
 
 function shape3dModelsData(oldModelData) {
-  const { timestamp, html_en, image_path } = oldModelData;
+  const { id, timestamp, html_en, image_path } = oldModelData;
   const excerptMDX = parseExcerptMDX(html_en);
+  const htmlEnNoQuotes = replaceSlashedQuotes(html_en);
   // image_path "content/publication-files/0001/tooltip.jpg"
-  const oldFilesDir = removeLastSegment(image_path);
+  const oldPublicationFilesFolder = removeLastSegment(image_path);
   const relativeDirectory = makeRelDir(oldModelData);
 
   const dataJSON = {
@@ -137,7 +162,7 @@ function shape3dModelsData(oldModelData) {
     thumbnail: {
       fileName: fileNameFormRelDir(relativeDirectory),
     },
-    subtype: defineSubtype(oldModelData, excerptMDX, oldFilesDir),
+    subtype: defineSubtype(oldModelData, htmlEnNoQuotes, oldPublicationFilesFolder),
     tags: {
       common: [{ text: 'NO Tags Items', type: 'danger' }],
     },
@@ -145,11 +170,62 @@ function shape3dModelsData(oldModelData) {
 
   const driveData = {
     relativeDirectory,
-    thumbnailFileName: defineThumbnail(oldFilesDir, image_path),
+    oldID: Number.parseInt(id, 10).toString(), // removing leading zeros
+    oldPublicationFilesFolder,
+    oldThumbnailFullFileName: defineThumbnail(oldPublicationFilesFolder, image_path),
     excerptMDX,
   };
 
   return { dataJSON, driveData };
+}
+
+function create3dModelsContents(shapedDataArray) {
+  console.log(shapedDataArray);
+  try {
+    shapedDataArray.forEach((shapedData) => {
+      const { dataJSON, driveData } = shapedData;
+      const {
+        relativeDirectory,
+        oldID,
+        oldPublicationFilesFolder,
+        oldThumbnailFullFileName,
+        excerptMDX,
+      } = driveData;
+      const {
+        subtype: { downloads },
+      } = dataJSON;
+      const itemFolder = path.resolve(dir['3d-models'], '2009-2019', relativeDirectory);
+
+      // data.json
+      writeJSON(itemFolder, 'data.json', dataJSON);
+
+      // thumbnail
+      const itemImagesFolder = path.resolve(itemFolder, 'images');
+      const thumbnailFullFileName = path.resolve(itemImagesFolder, dataJSON.thumbnail.fileName);
+      copyFile(oldThumbnailFullFileName, thumbnailFullFileName, itemImagesFolder);
+
+      // excerpt
+      writeFile(itemFolder, 'excerpt.mdx', excerptMDX);
+
+      if (dataJSON.subtype.downloads) {
+        // downloads
+        Object.keys(downloads).forEach((format) => {
+          const zipFileName = downloads[format];
+          const oldZipFullFileName = path.join(
+            dir.oldContent,
+            oldPublicationFilesFolder,
+            zipFileName
+          );
+          const zipFolder = path.join(dir.downloads, oldID);
+          const zipFullFileName = path.join(zipFolder, zipFileName);
+
+          copyFile(oldZipFullFileName, zipFullFileName, zipFolder);
+        });
+      }
+    });
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 async function extract3dModels() {
@@ -162,7 +238,7 @@ async function extract3dModels() {
     console.log(err);
   }
 
-  return { shapedData };
+  return shapedData;
 }
 
 async function handleRequest(_, res) {
@@ -172,14 +248,20 @@ async function handleRequest(_, res) {
     res.json({ error: 'Database connection not established.' });
   }
 
-  let results = [];
+  let shapedDataArray = null;
   try {
-    results = await extract3dModels(res);
+    shapedDataArray = await extract3dModels(res);
   } catch (err) {
-    res.json({ error: 'Cannot extract 3d Models.' });
+    res.json({ 'Error during extract 3d Models': err });
   }
 
-  res.json(results);
+  try {
+    create3dModelsContents(shapedDataArray);
+    console.log('3d Models extraction finished');
+    res.json('3d Models extraction finished');
+  } catch (err) {
+    res.json({ 'Error during create 3d Models contents': err });
+  }
 
   close();
 }
