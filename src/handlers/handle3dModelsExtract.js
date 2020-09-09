@@ -115,11 +115,20 @@ function parseExcerptMDX(html_en) {
   const regexDownloadLinks = /<a href="http:\/\/i\.renderstuff\.com\/content\/publication-files\/.*<\/a>/g;
   // pattern for two <br />
   const regexTwoBr = /<br \/>[\r\n]+<br \/>/g;
+  // pattern for <br /> at the end of a string
+  const regexBrAtEnd = /<br \/>$/g;
+  // pattern for TurboSquid Links
+  const regexTSLink = /<a href="http:\/\/www.turbosquid.com.*<\/a>/g;
+  // pattern for <p> tags sticked (no space) to text<p> (markdown cant render un-indented tags)
+  const regexPUnIndent = /\S<p>/g;
 
   sanitizedHtml = sanitizedHtml.replace(regexDownloadLinks, '');
   sanitizedHtml = sanitizedHtml.replace(regexTwoBr, '<br />');
   // additional pass, to remove double <br /> which still left after first pass over four <br />
   sanitizedHtml = sanitizedHtml.replace(regexTwoBr, '<br />');
+  sanitizedHtml = sanitizedHtml.replace(regexTSLink, '');
+  sanitizedHtml = sanitizedHtml.replace(regexPUnIndent, ' <p>');
+  sanitizedHtml = sanitizedHtml.replace(regexBrAtEnd, '');
 
   return sanitizedHtml;
 }
